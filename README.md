@@ -19,6 +19,7 @@ You can use either the original one you used to encrypt the drive, or the one th
 ## Fork
 * [TMP-LUKS 1.0.0](https://github.com/kelderek/TPM2-LUKS)
 the reason for forking at 1.0.0 is that with 2.0.0 it is interactive and therfor no longer script frindly
+the script has been rewriten to use BASH Funktions and exitcodes to indicate if there was an error
 
 ## Install
 Download tpm2-luks-unlock.sh, mark it as executable
@@ -77,7 +78,7 @@ If that also fails, you may be able to boot to a previous kernel version under A
 
 ## Known Issues
 * This only works for TPM 2.0 devices (including AMD fTPM and Intel PTT) but does NOT work for TPM 1.2 devices
-* Just storing a value in the TPM2 isn't the best or most secure method. 
+* Just storing a value in the TPM2 isn't the best or most secure method.
 It is a "good enough" method meant to protect from "normal" threats like a thief stealing your laptop and not a sophisticated attacker with physical and/or root access.
 It should also be combined with protections like preventing USB booting and a BIOS password.
 See https://run.tournament.org.il/ubuntu-20-04-and-tpm2-encrypted-system-disk/ for further discussion on this from etzion.

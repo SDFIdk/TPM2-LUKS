@@ -12,23 +12,6 @@
 #
 # or to specify a device:
 # sudo ./tpm2-luks-autounlock.sh /dev/sda3
-#
-# Updated 2023/05/26
-# -Renamed to tpm2-luks-autounlock.sh
-# -Now accepts the device as a command line parameter.  If none provided, pulls the first volume from /etc/crypttab and uses that.  Resolves issue #3
-# -Added check if running as root rather than using sudo (thanks zombiedk!).  Resolves issue #4
-# -Added variable to change the key size.  Defaults to 64 characters
-# -Added size parameter to tpm2_nvread calls to avoid warnings during unlock about reading the full index
-#
-# Updated 2022/04/29
-# -Automated comparison of root.key and TPM values
-# -Added support for multiple encrypted volumes by using the volume name for the temp file in tpm2-getkey
-# -Tested with Ubuntu 22.04.  Works as expected for LVM, but does not work for ZFS encryption
-#
-# -Added more output
-# Created 2020/07/13
-# This assumes a fresh Ubuntu 20.04 install that was configured with full disk LUKS encryption at install so it requires a password to unlock the disk at boot.
-# This will create a new 64 character random password, add it to LUKS, store it in the TPM, and modify initramfs to pull it from the TPM automatically at boot.
 
 KEYSIZE=64
 KEYFILE=/root/.tpm2.key

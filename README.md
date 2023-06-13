@@ -31,19 +31,19 @@ sudo chmod +x /usr/local/sbin/tpm2-luks-unlock.sh
 ## Usage
 Run it with sudo or as root e.g.
 ```
-sudo ./tpm2-luks-unlock.sh [ \<device path\> ]
+sudo tpm2-luks-unlock.sh [ \<device path\> ]
 ```
 
 Examples:
 
 This will run the script against the first volume listed in /etc/crypttab, which is usually sufficient for booting
 ```
-sudo ./tpm2-luks-unlock.sh
+sudo tpm2-luks-unlock.sh
 ```
 
 This will run the script against /dev/sda3
 ```
-sudo ./tpm2-luks-unlock.sh /dev/sda3
+sudo tpm2-luks-unlock.sh /dev/sda3
 ```
 
 If desired, you can modify the KEYSIZE variable near the top of the size to change the size of the key stored in the TPM2.

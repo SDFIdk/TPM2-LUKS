@@ -43,6 +43,14 @@ ArgumentHandeling () {
 	DEVICE=$(echo "$TARGET_DEVICE" | rev | awk -v FS='/' '{print $1}' | rev)
 }
 
+CheckTPM2Chip () {
+	if [ ! -c /dev/tpmrm0 ]
+	then
+		echo "ERROR TPM2 Chip not detected"
+		exit 1
+	fi
+}
+
 CheckDependencies () {
 	if ! command -v cryptsetup &> /dev/null
 	then
@@ -276,6 +284,9 @@ InfoMsg () {
 
 # Fail if not run as ROOT
 CheckIfRoot
+
+# Check if TPM2 chip exists
+CheckTPM2Chip
 
 # Check witch arguments the script is called with
 ArgumentHandeling $@

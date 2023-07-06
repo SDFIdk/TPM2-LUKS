@@ -19,9 +19,9 @@ KEYADDRESS=0x1500016
 
 CheckIfRoot () {
 	# Check if running as root
-	if (( $EUID != 0 )); then
+	if [ "$EUID" != 0 ]; then
 		echo "This script must run with root privileges, e.g.:"
-		echo "sudo $0 $1"
+		echo "sudo $0"
 		exit 1
 	fi
 }
@@ -38,7 +38,7 @@ ArgumentHandeling () {
 			echo "No device specified at the command line, and couldn't find one on the first line of /etc/crypttab.  Exiting with no changes made to the system."
 			exit 1
 		fi
-		TARGET_DEVICE=$(cryptsetup status $CRYPTTAB_VOLUME | sed -n -E 's/device:\s+(.*)/\1/p')
+		TARGET_DEVICE=$(cryptsetup status "$CRYPTTAB_VOLUME" | sed -n -E 's/device:\s+(.*)/\1/p')
 	fi
 	DEVICE=$(echo "$TARGET_DEVICE" | rev | awk -v FS='/' '{print $1}' | rev)
 }
@@ -92,21 +92,20 @@ KeyFileGenerate () {
 	else
 		echo "Generating a $KEYSIZE char alphanumeric key and saving it to $KEYFILE..."
 		echo
-		cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c $KEYSIZE > $KEYFILE
+		tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c "$KEYSIZE" > "$KEYFILE"
 	fi
 }
 
 KeyFileRemove () {
 	echo "Removing $KEYFILE file for extra security..."
 	echo
-	shred -n 10 -u $KEYFILE
+	shred -n 10 -u "$KEYFILE"
 }
 
 TPM2LuksCheck () {
 	echo "Check where the TPM2 key already exist in LUKS"
 	echo
-	tpm2_nvread -s $KEYSIZE $KEYADDRESS 2> /dev/null |cryptsetup open --test-passphrase $TARGET_DEVICE 2> /dev/null
-	if [ $? = 0 ]
+	if tpm2_nvread -s "$KEYSIZE" "$KEYADDRESS" 2> /dev/null |cryptsetup open --test-passphrase "$TARGET_DEVICE" 2> /dev/null
 	then
 		echo "The TPM2 key is already defined in LUKS no changes needed"
 		exit 0
@@ -116,21 +115,20 @@ TPM2LuksCheck () {
 TPM2Init () {
 	echo "Defining the area on the TPM where we will store a $KEYSIZE character key..."
 	echo
-	tpm2_nvundefine $KEYADDRESS 2> /dev/null
-	tpm2_nvdefine -s $KEYSIZE $KEYADDRESS > /dev/null
+	tpm2_nvundefine "$KEYADDRESS" 2> /dev/null
+	tpm2_nvdefine -s "$KEYSIZE" "$KEYADDRESS" > /dev/null
 }
 
 TPM2Write () {
 	echo "Storing the key in the TPM..."
 	echo
-	tpm2_nvwrite -i $KEYFILE $KEYADDRESS
+	tpm2_nvwrite -i "$KEYFILE" "$KEYADDRESS"
 }
 
 TPM2Verify () {
 	echo "Checking the saved key against the one in the TPM..."
 	echo
-	tpm2_nvread -s $KEYSIZE $KEYADDRESS 2> /dev/null | diff $KEYFILE - > /dev/null
-	if [ $? != 0 ]
+	if ! tpm2_nvread -s "$KEYSIZE" "$KEYADDRESS" 2> /dev/null | diff "$KEYFILE" - > /dev/null
 	then
 		echo "The $KEYFILE file does not match what is stored in the TPM.  Cannot proceed!"
 		exit 1
@@ -138,7 +136,7 @@ TPM2Verify () {
 }
 
 LuskDriveCheck () {
-	if $(cryptsetup isLuks $TARGET_DEVICE)
+	if cryptsetup isLuks "$TARGET_DEVICE"
 	then
 		echo "Using \"$TARGET_DEVICE\", which appears to be a valid LUKS encrypted device..."
 	else
@@ -151,8 +149,7 @@ LuskDriveCheck () {
 LuksAddKey () {
 	echo "Adding the new key to LUKS.  You will need to enter the current passphrase used to unlock the drive..."
 	echo
-	cryptsetup luksAddKey $TARGET_DEVICE $KEYFILE
-	if [ $? != 0 ]
+	if ! cryptsetup luksAddKey "$TARGET_DEVICE" "$KEYFILE"
 	then
 		echo "Something went wrong adding the encryption key to $TARGET_DEVICE."
 		echo "Check /etc/crypttab and/or lsblk to determine your encrypted volume, then update this script with the correct value"
@@ -163,8 +160,7 @@ LuksAddKey () {
 LuksVerify () {
 	echo "Checking the saved key against the one in the LUKS2..."
 	echo
-	cat $KEYFILE|cryptsetup open --test-passphrase $TARGET_DEVICE
-	if [ $? != 0 ]
+	if ! cryptsetup open --test-passphrase "$TARGET_DEVICE" < "$KEYFILE"
 	then
 		echo "The $KEYFILE file is not found in LUKS. Cannot proceed!"
 		exit 1
@@ -225,10 +221,10 @@ chmod 755 /etc/initramfs-tools/hooks/tpm2-decryptkey
 }
 
 Crypttab () {
-	if fgrep -q tpm2-getkey /etc/crypttab
+	if grep -F -q tpm2-getkey /etc/crypttab
 	then
 		echo "/etc/crypttab already has an entry for tpm2-getkey"
-		if fgrep tpm2-getkey /etc/crypttab|grep -q $DEVICE
+		if grep -F tpm2-getkey /etc/crypttab|grep -q "$DEVICE"
 		then
 			echo "No changes needed"
 			exit 0
@@ -241,7 +237,7 @@ Crypttab () {
 	fi
 
 	# This will only update the first line of /etc/crypttab.  If multiple updates are needed, they must be done manually.
-	if [ $(cat /etc/crypttab | wc -l) -gt 1 ]
+	if [ "$(wc -l < /etc/crypttab)" -gt 1 ]
 	then
 		echo "This section only update the first line of /etc/crypttab. It seems there are multiple lines, so please update the file manually."
 		echo "# e.g. this line: $DEVICE UUID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX none luks,discard"
@@ -256,8 +252,8 @@ Crypttab () {
 
 	echo "Copying the current initramfs just in case, then updating the initramfs with auto unlocking from the TPM..."
 	echo
-	cp /boot/initrd.img-$(uname -r) /boot/initrd.img-$(uname -r).orig
-	mkinitramfs -o /boot/initrd.img-$(uname -r) $(uname -r)
+	cp /boot/initrd.img-"$(uname -r)" /boot/initrd.img-"$(uname -r)".orig
+	mkinitramfs -o /boot/initrd.img-"$(uname -r)" "$(uname -r)"
 }
 
 InfoMsg () {
@@ -289,7 +285,7 @@ CheckIfRoot
 CheckTPM2Chip
 
 # Check witch arguments the script is called with
-ArgumentHandeling $@
+ArgumentHandeling "$@"
 
 # Check that the required apps are installed
 CheckDependencies

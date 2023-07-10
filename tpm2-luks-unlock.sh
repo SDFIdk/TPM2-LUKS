@@ -38,7 +38,7 @@ ArgumentHandeling () {
 			echo "No device specified at the command line, and couldn't find one on the first line of /etc/crypttab.  Exiting with no changes made to the system."
 			exit 1
 		fi
-		TARGET_DEVICE=$(cryptsetup status "$CRYPTTAB_VOLUME" | sed -n -E 's/device:\s+(.*)/\1/p')
+		TARGET_DEVICE=$(cryptsetup status "$CRYPTTAB_VOLUME" | sed -n -E 's/device:\s+(.*)/\1/p'|awk '{print $1}')
 	fi
 	DEVICE=$(echo "$TARGET_DEVICE" | rev | awk -v FS='/' '{print $1}' | rev)
 }

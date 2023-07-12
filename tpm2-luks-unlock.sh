@@ -225,14 +225,14 @@ Crypttab () {
 	if grep -F -q tpm2-getkey /etc/crypttab
 	then
 		echo "/etc/crypttab already has an entry for tpm2-getkey"
-		if grep -F tpm2-getkey /etc/crypttab|grep -q "$DEVICE"
+		if grep -F tpm2-getkey /etc/crypttab|grep -q "$CRYPTTAB_VOLUME"
 		then
 			echo "No changes needed"
 			exit 0
 		else
 			echo "ERROR: please manualy check that it is correct"
-			echo "# e.g. this line: $DEVICE UUID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX none luks,discard"
-			echo "# should become : $DEVICE UUID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX none luks,discard,keyscript=/usr/local/sbin/tpm2-getkey"
+			echo "# e.g. this line: $CRYPTTAB_VOLUME UUID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX none luks,discard"
+			echo "# should become : $CRYPTTAB_VOLUME UUID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX none luks,discard,keyscript=/usr/local/sbin/tpm2-getkey"
 			echo ""
 			echo "to enable tpm2 support in the boot loader you also must run this command to update initramfs"
 			echo "cp /boot/initrd.img-\"$(uname -r)\" /boot/initrd.img-\"$(uname -r)\".orig"
@@ -245,8 +245,8 @@ Crypttab () {
 	if [ "$(wc -l < /etc/crypttab)" -gt 1 ]
 	then
 		echo "This section only update the first line of /etc/crypttab. It seems there are multiple lines, so please update the file manually."
-		echo "# e.g. this line: $DEVICE UUID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX none luks,discard"
-		echo "# should become : $DEVICE UUID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX none luks,discard,keyscript=/usr/local/sbin/tpm2-getkey"
+		echo "# e.g. this line: $CRYPTTAB_VOLUME UUID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX none luks,discard"
+		echo "# should become : $CRYPTTAB_VOLUME UUID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX none luks,discard,keyscript=/usr/local/sbin/tpm2-getkey"
 		echo ""
 		echo "to enable tpm2 support in the boot loader you also must run this command to update initramfs"
 		echo "cp /boot/initrd.img-\"$(uname -r)\" /boot/initrd.img-\"$(uname -r)\".orig"

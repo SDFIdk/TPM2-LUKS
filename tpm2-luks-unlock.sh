@@ -288,9 +288,6 @@ InfoMsg () {
 # Fail if not run as ROOT
 CheckIfRoot
 
-# Check if TPM2 chip exists
-CheckTPM2Chip
-
 # Check witch arguments the script is called with
 ArgumentHandeling "$@"
 
@@ -299,6 +296,9 @@ CheckDependencies
 
 # Check where we have a LUKS drive
 LuskDriveCheck
+
+# Check if TPM2 chip exists
+CheckTPM2Chip
 
 # Check if TPM2 chip already have a key that can be used to unlock drive
 TPM2LuksCheck

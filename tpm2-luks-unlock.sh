@@ -40,8 +40,6 @@ ArgumentHandeling () {
 		fi
 		TARGET_DEVICE=$(cryptsetup status "$CRYPTTAB_VOLUME" | awk '/device:/ {print $2}')
 	fi
-	# remove /dev/ from device name
-	DEVICE=${TARGET_DEVICE##*/}
 }
 
 CheckTPM2Chip () {

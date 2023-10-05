@@ -46,6 +46,7 @@ CheckTPM2Chip () {
     if [ ! -c /dev/tpmrm0 ]
     then
         echo "ERROR TPM2 Chip not detected"
+        touch /root/.config/puppet/tpm2-luks-unlock.sh
         exit 1
     fi
 }
@@ -107,6 +108,7 @@ TPM2LuksCheck () {
     if tpm2_nvread -s "$KEYSIZE" "$KEYADDRESS" 2> /dev/null |cryptsetup open --test-passphrase "$TARGET_DEVICE" 2> /dev/null
     then
         echo "The TPM2 key is already defined in LUKS no changes needed"
+        touch /root/.config/puppet/tpm2-luks-unlock.sh
         exit 0
     fi
 }
@@ -226,6 +228,7 @@ Crypttab () {
         if grep -F tpm2-getkey /etc/crypttab|grep -q "$CRYPTTAB_VOLUME"
         then
             echo "No changes needed"
+            touch /root/.config/puppet/tpm2-luks-unlock.sh
             exit 0
         else
             echo "ERROR: please manualy check that it is correct"
@@ -335,3 +338,5 @@ Crypttab
 
 # Display final information
 InfoMsg
+
+touch /root/.config/puppet/tpm2-luks-unlock.sh

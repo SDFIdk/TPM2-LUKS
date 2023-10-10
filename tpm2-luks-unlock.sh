@@ -140,6 +140,31 @@ TPM2Verify () {
     fi
 }
 
+LuksActiveKey () {
+    echo "Check where the default key exist in LUKS2"
+    echo cryptsetup --key-file "$KEYFILE_DEFAULT" open --test-passphrase "$TARGET_DEVICE" 2> /dev/null
+    if cryptsetup --key-file "$KEYFILE_DEFAULT" open --test-passphrase "$TARGET_DEVICE" 2> /dev/null
+    then
+        echo "The default LUSK key $KEYFILE_DEFAULT is active"
+        KEYFILE_ACTIVE="$KEYFILE_DEFAULT"
+        return
+    fi
+
+    if cryptsetup --key-file $KEYFILE_LUKS2 open --test-passphrase "$TARGET_DEVICE" 2> /dev/null
+    then
+        echo "The LUSK key $KEYFILE_LUKS2 is active"
+        KEYFILE_ACTIVE="$KEYFILE_LUKS2"
+        return
+    fi
+
+    if cryptsetup --key-file $KEYFILE_TPM2 open --test-passphrase "$TARGET_DEVICE" 2> /dev/null
+    then
+        echo "The LUSK key $KEYFILE_TPM2 is active"
+        KEYFILE_ACTIVE="$KEYFILE_TPM2"
+        return
+    fi
+}
+
 LuskDriveCheck () {
     if cryptsetup isLuks "$TARGET_DEVICE"
     then
@@ -316,6 +341,9 @@ TPM2Init
 
 # Generate a random key
 KeyFileGenerate
+
+# check wich LUKS2 key is active
+LuksActiveKey
 
 # Write key to TPM2 chip
 TPM2Write

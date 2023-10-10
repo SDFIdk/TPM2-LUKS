@@ -13,9 +13,6 @@
 # or to specify a device:
 # sudo ./tpm2-luks-autounlock.sh /dev/sda3
 
-KEYSIZE=64
-KEYFILE=/root/.tpm2.key
-KEYADDRESS=0x1500016
 
 CheckIfRoot () {
     # Check if running as root
@@ -24,6 +21,14 @@ CheckIfRoot () {
         echo "sudo $0"
         exit 1
     fi
+}
+
+DefaultConfig () {
+    KEYFILE_DEFAULT=/root/.config/luks2_default.key
+    KEYFILE_LUKS2=/root/.config/luks2.key
+    KEYFILE_TPM2=/root/.config/tpm2.key
+    KEYSIZE=64
+    KEYADDRESS=0x1500016
 }
 
 ArgumentHandeling () {
@@ -290,6 +295,9 @@ InfoMsg () {
 
 # Fail if not run as ROOT
 CheckIfRoot
+
+# Set default variables
+DefaultConfig
 
 # Check witch arguments the script is called with
 ArgumentHandeling "$@"

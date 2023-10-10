@@ -91,20 +91,21 @@ CheckDependencies () {
 }
 
 KeyFileGenerate () {
-    if [ -f $KEYFILE ]
+    if [ ! -f $KEYFILE_TPM2 ]
     then
-        echo "Key file $KEYFILE already exists"
-    else
-        echo "Generating a $KEYSIZE char alphanumeric key and saving it to $KEYFILE..."
-        echo
-        tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c "$KEYSIZE" > "$KEYFILE"
+        echo "Generating a $KEYSIZE char alphanumeric key and saving it to
+        $KEYFILE_TPM2..."
+        tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c "$KEYSIZE" > "$KEYFILE_TPM2"
     fi
 }
 
-KeyFileRemove () {
-    echo "Removing $KEYFILE file for extra security..."
-    echo
-    shred -n 10 -u "$KEYFILE"
+KeyFileDefaultGenerate () {
+    if [ ! -f "$KEYFILE_DEFAULT" ]
+    then
+        echo "Generating default key file"
+        echo -n "ubuntu" > "$KEYFILE_DEFAULT"
+        chmod 0600 "$KEYFILE_DEFAULT"
+    fi
 }
 
 TPM2LuksCheck () {
@@ -126,16 +127,14 @@ TPM2Init () {
 
 TPM2Write () {
     echo "Storing the key in the TPM..."
-    echo
-    tpm2_nvwrite -i "$KEYFILE" "$KEYADDRESS"
+    tpm2_nvwrite -i "$KEYFILE_TPM2" "$KEYADDRESS"
 }
 
 TPM2Verify () {
     echo "Checking the saved key against the one in the TPM..."
-    if ! tpm2_nvread -s "$KEYSIZE" "$KEYADDRESS" 2> /dev/null | diff
-    if ! tpm2_nvread -s "$KEYSIZE" "$KEYADDRESS" 2> /dev/null | diff "$KEYFILE" - > /dev/null
+    if ! tpm2_nvread -s "$KEYSIZE" "$KEYADDRESS" 2> /dev/null | diff "$KEYFILE_TPM2" - > /dev/null
     then
-        echo "The $KEYFILE file does not match what is stored in the TPM.  Cannot proceed!"
+        echo "The $KEYFILE_TPM2 file does not match what is stored in the TPM.  Cannot proceed!"
         exit 1
     fi
 }
@@ -179,7 +178,6 @@ LuskDriveCheck () {
 LuksAddKey () {
     echo "Adding the new key to LUKS.  You will need to enter the current passphrase used to unlock the drive..."
     if ! cryptsetup luksAddKey --key-file "$KEYFILE_ACTIVE" "$TARGET_DEVICE" "$KEYFILE_TPM2"
-    if ! cryptsetup luksAddKey "$TARGET_DEVICE" "$KEYFILE"
     then
         echo "Something went wrong adding the encryption key to $TARGET_DEVICE."
         echo "Check /etc/crypttab and/or lsblk to determine your encrypted volume, then update this script with the correct value"
@@ -190,9 +188,8 @@ LuksAddKey () {
 LuksVerify () {
     echo "Checking the saved key against the one in the LUKS2..."
     if ! cryptsetup open --test-passphrase "$TARGET_DEVICE" < "$KEYFILE_TPM2"
-    if ! cryptsetup open --test-passphrase "$TARGET_DEVICE" < "$KEYFILE"
     then
-        echo "The $KEYFILE file is not found in LUKS. Cannot proceed!"
+        echo "The $KEYFILE_TPM2 file is not found in LUKS. Cannot proceed!"
         exit 1
     fi
 }
@@ -341,6 +338,9 @@ TPM2Init
 
 # Generate a random key
 KeyFileGenerate
+
+# default "ubuntu" key from autoinstall ISO
+KeyFileDefaultGenerate
 
 # check wich LUKS2 key is active
 LuksActiveKey

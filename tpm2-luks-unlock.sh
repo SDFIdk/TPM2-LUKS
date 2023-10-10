@@ -120,7 +120,6 @@ TPM2LuksCheck () {
 
 TPM2Init () {
     echo "Defining the area on the TPM where we will store a $KEYSIZE character key..."
-    echo
     tpm2_nvundefine "$KEYADDRESS" 2> /dev/null
     tpm2_nvdefine -s "$KEYSIZE" "$KEYADDRESS" > /dev/null
 }
@@ -133,7 +132,7 @@ TPM2Write () {
 
 TPM2Verify () {
     echo "Checking the saved key against the one in the TPM..."
-    echo
+    if ! tpm2_nvread -s "$KEYSIZE" "$KEYADDRESS" 2> /dev/null | diff
     if ! tpm2_nvread -s "$KEYSIZE" "$KEYADDRESS" 2> /dev/null | diff "$KEYFILE" - > /dev/null
     then
         echo "The $KEYFILE file does not match what is stored in the TPM.  Cannot proceed!"
@@ -154,7 +153,7 @@ LuskDriveCheck () {
 
 LuksAddKey () {
     echo "Adding the new key to LUKS.  You will need to enter the current passphrase used to unlock the drive..."
-    echo
+    if ! cryptsetup luksAddKey --key-file "$KEYFILE_ACTIVE" "$TARGET_DEVICE" "$KEYFILE_TPM2"
     if ! cryptsetup luksAddKey "$TARGET_DEVICE" "$KEYFILE"
     then
         echo "Something went wrong adding the encryption key to $TARGET_DEVICE."
@@ -165,7 +164,7 @@ LuksAddKey () {
 
 LuksVerify () {
     echo "Checking the saved key against the one in the LUKS2..."
-    echo
+    if ! cryptsetup open --test-passphrase "$TARGET_DEVICE" < "$KEYFILE_TPM2"
     if ! cryptsetup open --test-passphrase "$TARGET_DEVICE" < "$KEYFILE"
     then
         echo "The $KEYFILE file is not found in LUKS. Cannot proceed!"
@@ -175,7 +174,6 @@ LuksVerify () {
 
 TPM2GetKeyInstall () {
     echo "Creating a key recovery script and putting it at /usr/local/sbin/tpm2-getkey..."
-    echo
     cat << EOF > /usr/local/sbin/tpm2-getkey
 #!/bin/sh
 TMP_FILE=".tpm2-getkey.\$CRYPTTAB_NAME.tmp"
@@ -200,7 +198,6 @@ chmod 750 /usr/local/sbin/tpm2-getkey
 
 TPM2DecryptKeyInstall () {
     echo "Creating initramfs hook and putting it at /etc/initramfs-tools/hooks/tpm2-decryptkey..."
-    echo
     cat << EOF > /etc/initramfs-tools/hooks/tpm2-decryptkey
 #!/bin/sh
 PREREQ=""
@@ -279,12 +276,12 @@ InfoMsg () {
     echo "a DIFFERENT system, or printed and stored in a secure location on another system so you can manually enter it at the prompt."
     echo "To get a copy of your key for backup purposes, run this command:"
     echo "tpm2_nvread -s $KEYSIZE $KEYADDRESS"
-    echo
+    echo ""
     echo "If you remove the original password used to encrypt the drive and fail to backup the key in then TPM then experience TPM,"
     echo "motherboard, or another failure preventing auto-unlock, you WILL LOSE ACCESS TO EVERYTHING ON THE DRIVE!"
     echo "If you are SURE you have a backup of the key you put in the TPM, here is the command to remove the original password:"
     echo "cryptsetup luksRemoveKey $TARGET_DEVICE"
-    echo
+    echo ""
     echo "If booting fails, press esc at the beginning of the boot to get to the grub menu.  Edit the Ubuntu entry and add .orig to end"
     echo "of the initrd line to boot to the original initramfs this one time."
     echo "e.g. initrd /initrd.img-5.4.0-40-generic.orig"

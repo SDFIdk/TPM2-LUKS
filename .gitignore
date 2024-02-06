@@ -20,3 +20,5 @@ Sessionx.vim
 # Persistent undo
 [._]*.un~
 
+# jet brains
+.idea
